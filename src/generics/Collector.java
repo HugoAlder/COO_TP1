@@ -1,5 +1,4 @@
 package generics;
-import java.util.*;
 
 /** define collectors able to collect (and carry) one specific type T of objects
  * only one T object can be carried at a time
@@ -12,8 +11,7 @@ public class Collector<T> {
     }
 
     private String name;
-	
-    // ATTRIBUTS carriedObject Ã  DEFINIR
+	private T carriedObject = null;
 
     public String toString() {
 	return this.name;
@@ -21,11 +19,57 @@ public class Collector<T> {
     public String description() {
 	return this.name + " carries " + this.carriedObject;
     }
-    // METHODES a DEFINIR
+    
     // take : pour prendre un objet de type T (si aucun de "tenu")
+    
+    public void take(T objectToCarry) {
+    	if(carriedObject == null) {
+    		carriedObject = objectToCarry;
+    	}
+    	else {
+    		try {
+				throw(new AlreadyCarryingException(this.toString() + " porte déjà quelque chose."));
+			} catch (AlreadyCarryingException e) {
+				e.printStackTrace();
+			}
+    	}
+    }
+    
     // getCarriedObject : pour connaitre l'objet "porte" (null si saucun)
-    // giveTo : donne l'objet porte a un autre ramasseur compatible 
+    
+    public T getCarriedObject() {
+    	return carriedObject;
+    }
+    
+    // giveTo : donne l'objet porte a un autre ramasseur compatible
+    
+    public void giveTo(Collector<? super T> taker) {
+    	if(taker.carriedObject != null) {
+    		try {
+				throw(new AlreadyCarryingException(taker.toString() + " porte déjà quelque chose."));
+			} catch (AlreadyCarryingException e) {
+				e.printStackTrace();
+			}
+    	}
+    	else if(this.carriedObject == null) {
+    		try {
+				throw(new AlreadyCarryingException(this.toString() + " ne porte rien."));
+			} catch (AlreadyCarryingException e) {
+				e.printStackTrace();
+			}
+    	}
+    	else {
+    		taker.carriedObject = (T) this.carriedObject;
+    		this.carriedObject = null;
+    	}
+    	
+    }
+    
     // drop : depose l'objet "tenu"
+    
+    public void drop() {
+    	carriedObject = null;
+    }
 
     public static void main(String[] args) {
 	
@@ -42,10 +86,10 @@ public class Collector<T> {
 		// attention ici le type d'objets ramasses est Legume :
 		Collector<Vegetable> vegetableCollector = new Collector<Vegetable>("vegetable-collector");
 
-		carrotCollector1.collect(c3);
+		carrotCollector1.take(c3);
 		System.out.println(carrotCollector1.description());
 		// NE COMPILE PAS
-		// carrotCollector2.collect(p1);
+		// carrotCollector2.take(p1);
 
 		// NE COMPILE PAS
 		// carrotCollector1.giveTo(appleCollector1);
@@ -58,11 +102,11 @@ public class Collector<T> {
 		// NE COMPILE PAS
 		// appleCollector1.giveTo(vegetableCollector);
 
-		carrotCollector1.collect(c1);
+		carrotCollector1.take(c1);
 		carrotCollector1.giveTo(carrotCollector2);
 		System.out.println(carrotCollector1.description());
 		System.out.println(carrotCollector2.description());
-		carrotCollector1.collect(c2);
+		carrotCollector1.take(c2);
 		
 		
 		try {
@@ -72,17 +116,17 @@ public class Collector<T> {
 			System.out.println(" * " + e.getMessage());
 		}
 
-		appleCollector1.collect(p2);
+		appleCollector1.take(p2);
 		System.out.println(appleCollector1.description());
 		try {
-			appleCollector1.collect(p1);
+			appleCollector1.take(p1);
 		} catch (IllegalStateException e) {
 			//System.out.println("*** exception : " + appleCollector1 + " porte deja qque chose");
 			System.out.println(" * " + e.getMessage());
 		}
 		appleCollector1.drop();
 		System.out.println(appleCollector1.description());
-		appleCollector1.collect(p1);
+		appleCollector1.take(p1);
 	
      }
 }
